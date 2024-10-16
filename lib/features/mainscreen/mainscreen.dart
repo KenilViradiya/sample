@@ -36,7 +36,7 @@ class Main_Screen extends StatelessWidget {
           ElevatedButton(
               onPressed: () {
                 services.joinGame(_gameid.text, playerid);
-                Get.to(GameScreen(gameId: gameid,playerId: playerid,));
+                Get.to(GameScreen(gameId: _gameid.text,playerId: playerid));
               },
               child: Text("Join Game")),
           ElevatedButton(onPressed: () {}, child: Text('Play Game')),

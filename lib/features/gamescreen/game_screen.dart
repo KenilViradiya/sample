@@ -35,19 +35,29 @@ class GameScreen extends StatelessWidget {
             return Center(child: Text('Error loading game data.'));
           }
 
-          // Get game data with null safety check
-Map<String,dynamic> gameData  = Map<String,dynamic>.from(snapshot.data!.snapshot.value as Map<dynamic,dynamic>);
+          // Get game data and cast it to Map<String, dynamic>
+          Map<String, dynamic> gameData = Map<String, dynamic>.from(
+              snapshot.data!.snapshot.value as Map<dynamic, dynamic>);
+
           print('Game Data: $gameData');
 
+          // **LOGGING ADDED FOR DEBUGGING**
+          print('Player1: ${gameData['player1']}');
+          print('Player2: ${gameData['player2']}');
+
           // Check if both players are present
-          if (gameData?['player1'] == null || gameData?['player2'] == null) {
-            return Center(child: Text('Waiting for another player to join...'));
+          if (gameData['player1'] == null || gameData['player2'] == null) {
+            // If player1 is present, player2 is missing, show message accordingly
+            if (gameData['player1'] != null && gameData['player2'] == null) {
+              return Center(child: Text('Waiting for another player to join...'));
+            }
           }
 
-          // Extract game data
-          List<dynamic> board = gameData?['board'] ?? List.filled(9, null);
-          String turn = gameData?['turn'] ?? 'player1';
-          String? winner = gameData?['winner'];
+
+          // Both players have joined, proceed with the game
+          List<dynamic> board = gameData['board'] ?? List.filled(9, null);
+          String turn = gameData['turn'] ?? 'player1';
+          String? winner = gameData['winner'];
 
           // Update the board in the controller
           gameController.board.assignAll(board.cast<String?>());
@@ -92,7 +102,7 @@ Map<String,dynamic> gameData  = Map<String,dynamic>.from(snapshot.data!.snapshot
               SizedBox(height: 20),
               // Reset game button
               ElevatedButton(
-                onPressed: () => firestoreService.resetgame,
+                onPressed: () => firestoreService.resetgame(),
                 child: Text('Reset Game'),
               ),
             ],
