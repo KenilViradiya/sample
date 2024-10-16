@@ -1,27 +1,27 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:multiplayer/features/gamescreen/game_controller.dart';
+import 'package:multiplayer/features/model/game.dart';
 
 class Firestore_Services {
   DatabaseReference _fb;
-final GameContoller _gameContoller  = Get.put(GameContoller());
+  final GameController _gameContoller = Get.put(GameController());
+
   Firestore_Services(String gameid)
       : _fb = FirebaseDatabase.instance.ref("Games/$gameid");
 
-  Future<String?> createGame(String gameid, String player1Id) async {
-    await _fb.set({
-      'player1': player1Id,
-      'player2': null, // Player 2 joins later
-      'board': List.filled(9, null),
-      'turn': 'player1',
-      'winner': null,
-      'createdAt': ServerValue.timestamp, // Use ServerValue for Realtime Database
-    }).then((_) {
-      print('Data added for game: $gameid with player: $player1Id');
+  Future<String?> createGame( String player1Id) async {
+    GameModel newgame = GameModel(
+        player1: player1Id,
+        player2: null,
+        board: List.filled(9, null),
+        turn: 'player1',
+        winner: null,
+        createdAt: 1);
+    await _fb.set(newgame.toMap()).then((_) {
+      print('Data added for game:  with player: $player1Id');
     }).catchError((error) {
-      print('Failed to add data: $error');
+      print('Failed to load data');
     });
   }
 
@@ -43,25 +43,33 @@ final GameContoller _gameContoller  = Get.put(GameContoller());
   void move(String gameId, int index, String playerId) {
     _fb.get().then((snapshot) {
       if (snapshot.exists) {
-        Map<String, dynamic>? gameData = snapshot.value as Map<String, dynamic>?;
-        List<dynamic> board = gameData?['board'] ?? List.filled(9, null);
+        Map<Object?, Object?>? gameData =
+            snapshot.value as Map<Object?, Object?>? ?? {};
+        List<dynamic> board =
+            (gameData?['board'] as List<dynamic>?) ?? List.filled(9, null);
 
-        if (board[index] == null) {
-          // Update the turn
-          String currentSymbol = (playerId == gameData?['player1']) ? 'X' : 'O';
-          board[index] = currentSymbol;
-          String nextTurn = (playerId == gameData?['player1']) ? 'player2' : 'player1';
+        if (index >= 0 && index < board.length) {
+          if (board[index] == null) {
+            String currentSymbol =
+                (playerId == gameData?['player1']) ? 'X' : 'O';
+            board[index] = currentSymbol;
+            String nextTurn =
+                (playerId == gameData?['player1']) ? 'player2' : 'player1';
 
-
-          // Update in the database
-          _fb.update({
-            'board': board,
-            'turn': nextTurn,
-            'winner': _gameContoller.checkWinner(board),
-            // Implement a function to check for a winner
-          });
+            _fb.update({
+              'board': board,
+              'turn': nextTurn,
+              'winner': _gameContoller.checkWinner(board),
+            });
+          } else {
+            print('Cell already occupied.');
+          }
+        } else {
+          print('Invalid index: $index');
         }
       }
+    }).catchError((error) {
+      print('Failed to get data: $error');
     });
   }
 
@@ -78,6 +86,4 @@ final GameContoller _gameContoller  = Get.put(GameContoller());
   Future<Stream<DatabaseEvent>> gameUpdates() async {
     return _fb.onValue;
   }
-
-
 }

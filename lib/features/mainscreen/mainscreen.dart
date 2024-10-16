@@ -12,8 +12,8 @@ class Main_Screen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final GameContoller gameController = Get.put(GameContoller());
-    final playerid = gameController.uniqueUserid(); // Unique player ID
+    final GameController _gameController = Get.put(GameController());
+    final playerid = _gameController.uniqueUserid();// Unique player ID
     final TextEditingController _gameid = TextEditingController(); // Controller for game ID input
 
     return Scaffold(
@@ -25,11 +25,11 @@ class Main_Screen extends StatelessWidget {
           // Button to create a new game
           ElevatedButton(
             onPressed: () {
-              final gameid = gameController.gameIDGenerate(); // Generate a new game ID
+              final gameid = _gameController.gameIDGenerate(); // Generate a new game ID
               final services = Firestore_Services(gameid); // Initialize Firestore service with game ID
 
-              services.createGame(gameid, playerid); // Create game with player1 (current user)
-              Get.to(GameScreen(gameId: gameid, playerId: playerid)); // Navigate to game screen
+              services.createGame(playerid); // Create game with player1 (current user)
+              Get.to(GameScreen()); // Navigate to game screen
             },
             child: Text('Create Game'),
           ),
@@ -47,7 +47,7 @@ class Main_Screen extends StatelessWidget {
 
                 services.joinGame(enteredGameId, playerid); // Join game as player2
                 print('Player joined game with ID: $enteredGameId');
-                Get.to(GameScreen(gameId: enteredGameId, playerId: playerid)); // Navigate to game screen
+                // Get.to(GameScreen(gameId: enteredGameId, playerId: playerid)); // Navigate to game screen
               } else {
                 print('Please enter a valid game ID');
               }

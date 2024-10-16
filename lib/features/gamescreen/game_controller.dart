@@ -3,10 +3,22 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 
-class GameContoller extends GetxController {
-  var board =
-      List<String?>.filled(9, null).obs; // Observable list for the game board
+class GameController extends GetxController {
+  RxList<String?> board = List<String?>.filled(9, null).obs;
+  var turn = 'X'.obs; // Reactive turn
+  var winner = ''.obs; // Reactive winner
 
+  void updateGameData(Map<String, dynamic> gameData) {
+    board.assignAll(gameData['board']?.cast<String?>() ?? List.filled(9, null));
+    turn.value = gameData['turn'] ?? 'player1';
+    winner.value = gameData['winner'] ?? '';
+  } // Observable list for the game board
+void resetGame()
+{
+  board.assignAll(List<String?>.filled(9,null));
+  winner.value = '';
+  turn.value =  'X';
+}
   String uniqueUserid() {
     return FirebaseFirestore.instance.collection('Games').doc().id;
   }
@@ -50,6 +62,13 @@ class GameContoller extends GetxController {
         ? null
         : 'Draw'; // Return 'Draw' if no empty spaces
   }
+  void makeMove(int index)
+  {
+    if (board[index] == null && winner.value.isEmpty) {
+      board[index] =  turn.value;
+      winner.value = checkWinner(board)?? '';
+      turn.value = turn.value == 'X' ? 'O' : 'X'; // Switch turns
 
-
+    }
+  }
 }
