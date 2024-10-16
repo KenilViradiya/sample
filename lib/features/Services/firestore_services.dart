@@ -26,16 +26,18 @@ final GameContoller _gameContoller  = Get.put(GameContoller());
   }
 
   Future<void> joinGame(String gameid, String player2id) async {
-    await _fb.update({
-      'player2': player2id,
-    }).then((_){
-      print('player 2 join with $gameid and store it' );
-
-    }).catchError((error)
-        {
-          print('Failed to add data: $error');
-
-        });
+    final snapshot = await _fb.get();
+    if (snapshot.exists) {
+      await _fb.update({
+        'player2': player2id,
+      }).then((_) {
+        print('Player 2 joined game with ID: $gameid');
+      }).catchError((error) {
+        print('Failed to add player: $error');
+      });
+    } else {
+      print('Game ID: $gameid does not exist.');
+    }
   }
 
   void move(String gameId, int index, String playerId) {
