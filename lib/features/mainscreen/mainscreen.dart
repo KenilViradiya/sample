@@ -1,47 +1,59 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:multiplayer/features/Services/firestore_services.dart';
-import 'package:multiplayer/features/gamescreen/game_screen.dart';
+import 'package:get/get_core/src/get_main.dart';
 
+import '../Services/firestore_services.dart';
 import '../gamescreen/game_controller.dart';
+import '../gamescreen/game_screen.dart';
 
 class Main_Screen extends StatelessWidget {
   Main_Screen({super.key});
 
-
   @override
   Widget build(BuildContext context) {
     final GameContoller gameController = Get.put(GameContoller());
-    final gameid = gameController.gameIDGenerate();
-    final playerid = gameController.uniqueUserid();
-    final services = Firestore_Services(gameid);
+    final playerid = gameController.uniqueUserid(); // Unique player ID
+    final TextEditingController _gameid = TextEditingController(); // Controller for game ID input
 
-    final TextEditingController _gameid = TextEditingController();
     return Scaffold(
       appBar: AppBar(
         title: Text('Welcome to the app'),
       ),
       body: Column(
         children: [
+          // Button to create a new game
           ElevatedButton(
-              onPressed: () {
-                services.createGame(gameid, playerid);
-                Get.to(GameScreen(gameId: gameid,playerId: playerid,));
-              },
-              child: Text('Create Game')),
+            onPressed: () {
+              final gameid = gameController.gameIDGenerate(); // Generate a new game ID
+              final services = Firestore_Services(gameid); // Initialize Firestore service with game ID
+
+              services.createGame(gameid, playerid); // Create game with player1 (current user)
+              Get.to(GameScreen(gameId: gameid, playerId: playerid)); // Navigate to game screen
+            },
+            child: Text('Create Game'),
+          ),
+          // TextField to input the game ID to join an existing game
           TextField(
             controller: _gameid,
             decoration: InputDecoration(hintText: "Enter the game id"),
           ),
+          // Button to join an existing game
           ElevatedButton(
-              onPressed: () {
-                services.joinGame(_gameid.text, playerid);
-                var id  =  _gameid.text;
-                print('player join with $id');
-                Get.to(GameScreen(gameId: _gameid.text,playerId: playerid));
-              },
-              child: Text("Join Game")),
-          ElevatedButton(onPressed: () {}, child: Text('Play Game')),
+            onPressed: () {
+              final enteredGameId = _gameid.text.trim(); // Get the entered game ID
+              if (enteredGameId.isNotEmpty) {
+                final services = Firestore_Services(enteredGameId); // Initialize Firestore service with the entered game ID
+
+                services.joinGame(enteredGameId, playerid); // Join game as player2
+                print('Player joined game with ID: $enteredGameId');
+                Get.to(GameScreen(gameId: enteredGameId, playerId: playerid)); // Navigate to game screen
+              } else {
+                print('Please enter a valid game ID');
+              }
+            },
+            child: Text("Join Game"),
+          ),
         ],
       ),
     );
