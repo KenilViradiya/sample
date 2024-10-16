@@ -2,6 +2,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:multiplayer/features/Services/firestore_services.dart';
+
 import 'game_controller.dart';
 
 class GameScreen extends StatelessWidget {
@@ -36,7 +37,8 @@ class GameScreen extends StatelessWidget {
           }
 
           // Get game data with null safety check
-          Map<String,dynamic> gameData  = Map<String,dynamic>.from(snapshot.data!.snapshot.value as Map<dynamic,dynamic>);
+          Map<String, dynamic> gameData = Map<String, dynamic>.from(
+              snapshot.data!.snapshot.value as Map<dynamic, dynamic>);
           print('Game Data: $gameData');
 
           // Check if both players are present
@@ -69,6 +71,11 @@ class GameScreen extends StatelessWidget {
                       // Check if the move can be made
                       if (board[index] == null && winner == null) {
                         firestoreService.move(gameId, index, playerId);
+                      } else if (winner != null) {
+                        print('Game over! Winner: $winner');
+                      } else {
+                        print(
+                            'Cell already occupied. Please choose another cell.');
                       }
                     },
                     child: Container(

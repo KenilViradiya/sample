@@ -41,15 +41,15 @@ final GameContoller _gameContoller  = Get.put(GameContoller());
   void move(String gameId, int index, String playerId) {
     _fb.get().then((snapshot) {
       if (snapshot.exists) {
-        Map<String, dynamic> gameData = snapshot.value as Map<String, dynamic>;
-        List<dynamic> board = gameData['board'] ?? List.filled(9, null);
+        Map<String, dynamic>? gameData = snapshot.value as Map<String, dynamic>?;
+        List<dynamic> board = gameData?['board'] ?? List.filled(9, null);
 
         if (board[index] == null) {
-          board[index] = playerId;
           // Update the turn
-          String nextTurn = (playerId == gameData['player1'])
-              ? 'player2'
-              : 'player1';
+          String currentSymbol = (playerId == gameData?['player1']) ? 'X' : 'O';
+          board[index] = currentSymbol;
+          String nextTurn = (playerId == gameData?['player1']) ? 'player2' : 'player1';
+
 
           // Update in the database
           _fb.update({
