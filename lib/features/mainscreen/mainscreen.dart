@@ -12,10 +12,10 @@ class Main_Screen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final GameController _gameController = Get.put(GameController());
-    final playerid = _gameController.uniqueUserid();// Unique player ID
-    final TextEditingController _gameid = TextEditingController(); // Controller for game ID input
+    final GameController gameController = Get.put(GameController());
+    final playerid = gameController.uniqueUserid();// Unique player ID
 
+    final TextEditingController _gameid = TextEditingController(); // Controller for game ID input
     return Scaffold(
       appBar: AppBar(
         title: Text('Welcome to the app'),
@@ -25,11 +25,10 @@ class Main_Screen extends StatelessWidget {
           // Button to create a new game
           ElevatedButton(
             onPressed: () {
-              final gameid = _gameController.gameIDGenerate(); // Generate a new game ID
-              final services = Firestore_Services(gameid); // Initialize Firestore service with game ID
+              final gameid = gameController.gameIDGenerate(); // Generate a new game ID
+              final services = Firestore_Services(gameid);
 
-              services.createGame(playerid); // Create game with player1 (current user)
-              Get.to(GameScreen()); // Navigate to game screen
+              services.createGame(playerid,gameid);
             },
             child: Text('Create Game'),
           ),

@@ -1,89 +1,72 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:get/get.dart';
-import 'package:multiplayer/features/gamescreen/game_controller.dart';
+import 'package:multiplayer/features/gamescreen/game_screen.dart';
 import 'package:multiplayer/features/model/game.dart';
 
 class Firestore_Services {
   DatabaseReference _fb;
-  final GameController _gameContoller = Get.put(GameController());
 
   Firestore_Services(String gameid)
       : _fb = FirebaseDatabase.instance.ref("Games/$gameid");
+  RxList<String?> board = List<String?>.filled(9, '').obs;
+  String player1idd = '';
+  String player2idd = '';
 
-  Future<String?> createGame( String player1Id) async {
+  Future<void> createGame(String player1Id,String gameid) async {
+    player1idd = player1Id;
     GameModel newgame = GameModel(
         player1: player1Id,
-        player2: null,
-        board: List.filled(9, null),
+        player2: '',
+        board: List<String>.filled(9, ''),
         turn: 'player1',
         winner: null,
-        createdAt: 1);
+        createdAt: DateTime.now().microsecond);
     await _fb.set(newgame.toMap()).then((_) {
+      Get.to(GameScreen(gameid: gameid));
+
       print('Data added for game:  with player: $player1Id');
     }).catchError((error) {
-      print('Failed to load data');
+      print('Failed to load data $error' );
     });
   }
 
-  Future<void> joinGame(String gameid, String player2id) async {
-    final snapshot = await _fb.get();
+  Future<void> joinGame(String gameid, String player2Id) async {
+    player2Id = player2Id;
+    DataSnapshot snapshot = await _fb.get();
     if (snapshot.exists) {
-      await _fb.update({
-        'player2': player2id,
-      }).then((_) {
-        print('Player 2 joined game with ID: $gameid');
-      }).catchError((error) {
-        print('Failed to add player: $error');
-      });
-    } else {
-      print('Game ID: $gameid does not exist.');
-    }
-  }
+      try {
+        Map<String, dynamic>? gameData =
+            (snapshot.value as Map<Object?, Object?>?)?.cast<String, dynamic>();
 
-  void move(String gameId, int index, String playerId) {
-    _fb.get().then((snapshot) {
-      if (snapshot.exists) {
-        Map<Object?, Object?>? gameData =
-            snapshot.value as Map<Object?, Object?>? ?? {};
-        List<dynamic> board =
-            (gameData?['board'] as List<dynamic>?) ?? List.filled(9, null);
-
-        if (index >= 0 && index < board.length) {
-          if (board[index] == null) {
-            String currentSymbol =
-                (playerId == gameData?['player1']) ? 'X' : 'O';
-            board[index] = currentSymbol;
-            String nextTurn =
-                (playerId == gameData?['player1']) ? 'player2' : 'player1';
-
-            _fb.update({
-              'board': board,
-              'turn': nextTurn,
-              'winner': _gameContoller.checkWinner(board),
-            });
-          } else {
-            print('Cell already occupied.');
-          }
+        if (gameData != null && gameData['player2'] == '') {
+          await _fb.update({
+            'player2': player2Id,
+          }).then((_) {
+            print('Player 2 ($player2Id) has joined the game: $gameid');
+            Get.to(GameScreen(
+              gameid: gameid,
+            ));
+          }).catchError((error) {
+            print('Failed to join the game: $error');
+          });
         } else {
-          print('Invalid index: $index');
+          print('Player 2 has already joined the game.');
         }
+      } catch (e) {
+        print('Error casting game data: $e');
       }
-    }).catchError((error) {
-      print('Failed to get data: $error');
-    });
+    } else {
+      print('Game not found: $gameid');
+    }
   }
 
   void resetgame() {
     _fb.set({
-      'board': List.filled(9, null),
+      'board': List.filled(9, ''),
       'turn': 'player1',
       'winner': null,
       'player1': null, // You can pass player1's ID here if needed
       'player2': null,
     });
-  }
-
-  Future<Stream<DatabaseEvent>> gameUpdates() async {
-    return _fb.onValue;
   }
 }
