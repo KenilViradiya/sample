@@ -32,7 +32,7 @@ class GameModel {
     return {
       'player1': player1,
       'player2': '',
-      'board':  List<String?>.filled(9, '').obs
+      'board':  List<String?>.filled(9, null).obs
     ,
       'turn': 'player1',
       'winner': winner,
