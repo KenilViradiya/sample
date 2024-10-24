@@ -1,0 +1,5 @@
+enum PlayerType
+{
+  creator,
+  joiner
+}

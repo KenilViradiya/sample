@@ -1,95 +1,107 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:multiplayer/features/Services/firestore_services.dart';
-
+import 'package:multiplayer/features/enum/playertype.dart';
 import 'game_controller.dart';
 
 class GameScreen extends StatelessWidget {
   final String gameid;
+  final PlayerType playerType;
+  final GameController controller;
 
-  const GameScreen({
-    super.key,
-    required this.gameid,
-  });
+  GameScreen({Key? key, required this.gameid, required this.playerType})
+      : controller = Get.put(GameController(gameId: gameid)),
+        super(key: key) {
+    controller.firestore_services.listenChange(); // Start listening to Firebase changes
+  }
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put<GameController>(GameController(gameId: gameid));
- final sevices  =  Get.put(Firestore_Services(gameid));
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Tic Tac Toe'),
-      ),
-      body: Obx(() {
-        // Check if player2 has joined the game
-        if (sevices.gameStatus.value != "Both players have joined. Game is ready!") {
-          // Show waiting message until player 2 joins
-          return Center(
-            child: Text(
-              sevices.gameStatus.value,
-              style: TextStyle(fontSize: 24),
+      appBar: AppBar(title: const Text('Tic Tac Toe')),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Expanded(
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 1.0,
+              ),
+              itemCount: 9,
+              itemBuilder: (context, index) {
+                return Obx(() {
+                  String? symbol = controller.firestore_services.board[index];
+                  Color textColor;
+
+                  // Assign colors for symbols
+                  if (symbol == 'X') {
+                    textColor = Colors.blue;
+                  } else if (symbol == 'O') {
+                    textColor = Colors.red;
+                  } else {
+                    textColor = Colors.black;
+                  }
+
+                  return GestureDetector(
+                    onTap: () {
+                      print('Current turn: ${controller.firestore_services.ismyturn.value}');
+
+                      // Check if it's the player's turn
+                      if ((playerType == PlayerType.creator &&
+                          controller.firestore_services.ismyturn.value) ||
+                          (playerType == PlayerType.joiner &&
+                              !controller.firestore_services.ismyturn.value)) {
+                        controller.firestore_services.ismyturn.value =
+                        !controller.firestore_services.ismyturn.value;
+                        print('chnage by if ${controller.firestore_services
+                            .ismyturn.value}');
+
+                        controller.firestore_services.makeMove(
+                            index, playerType);
+                        controller.firestore_services
+                            .listenChange(); // Listen for turn changes
+
+                      } else {
+                        controller.firestore_services
+                            .listenChange(); // Listen for turn changes
+
+                        Get.snackbar('Invalid Move', 'Not your turn');
+                      }
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.black),
+                      ),
+                      child: Center(
+                        child: Text(
+                          symbol ?? '', // Display the symbol on the board
+                          style: TextStyle(fontSize: 40, color: textColor),
+                        ),
+                      ),
+                    ),
+                  );
+                });
+              },
             ),
-          );
-        } else {
-          // If both players have joined, show the game board
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Tic Tac Toe Board
-              Expanded(
-                child: GridView.builder(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    childAspectRatio: 1.0,
-                  ),
-                  itemCount: 9,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () async {
-                        // Add your logic to handle player moves
-                        // Example:
-                        // if (controller.isMyTurn) {
-                        //   await controller.makeMove(index);
-                        // }
-                      },
-                      child: Obx(() => Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black),
-                          color: controller.board[index] == 'X'
-                              ? Colors.blue
-                              : (controller.board[index] == 'O'
-                              ? Colors.red
-                              : Colors.white),
-                        ),
-                        child: Center(
-                          child: Text(
-                            controller.board[index] ?? '',
-                            style: TextStyle(fontSize: 36),
-                          ),
-                        ),
-                      )),
-                    );
-                  },
-                ),
-              ),
-              SizedBox(height: 20),
-              // Display the winner
-              Obx(() => Text(
-                'Winner: ${controller.winner.value.isNotEmpty ? controller.winner.value : 'None'}',
-                style: TextStyle(fontSize: 24),
-              )),
-              SizedBox(height: 20),
-              // Reset game button
-              ElevatedButton(
-                onPressed: () {
-                  // Add your logic to reset the game
-                },
-                child: Text('Reset Game'),
-              ),
-            ],
-          );
-        }
-      }),
+          ),
+          const SizedBox(height: 20),
+          Obx(() => Text(
+            'Turn: ${controller.firestore_services.ismyturn.value ? "Your Turn" : "Opponent\'s Turn"}',
+            style: const TextStyle(fontSize: 24),
+          )),
+          Obx(() => Text(
+            'Winner: ${controller.firestore_services.winner.value.isNotEmpty ? controller.firestore_services.winner.value : 'None'}',
+            style: const TextStyle(fontSize: 24),
+          )),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {
+            controller.firestore_services.resetGame(); // Add reset game functionality if needed
+            },
+            child: const Text('Reset Game'),
+          ),
+        ],
+      ),
     );
   }
 }

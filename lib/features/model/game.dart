@@ -6,7 +6,7 @@ class GameModel {
   String player1; // Player 1 ID
   String? player2; // Player 2 ID (can be null initially)
   List<String> board; // Game board
-  String turn; // Current player's turn
+  bool turn; // Current player's turn
   String? winner; // Winner of the game (can be null)
   int createdAt;
   GameModel({
