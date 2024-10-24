@@ -64,6 +64,7 @@ resetGame();      }
     });
   }
   void listenChange() {
+    checkWinner();
     _fb.child('turn').onValue.listen((event) {
       if (event.snapshot.exists) {
         bool turn = event.snapshot.value as bool;
@@ -76,7 +77,7 @@ resetGame();      }
         List<dynamic>? boardData = event.snapshot.value as List<dynamic>?;
         if (boardData != null) {
           board.value = boardData.cast<String?>();
-          checkWinner(); // Check for a winner after every board update
+          // Check for a winner after every board update
         }
       }
     });
@@ -115,7 +116,7 @@ resetGame();      }
         winner.value = a!;  // Set the winner ('X' or 'O')
         _fb.update({'winner': winner.value});  // Update winner in Firebase
         print('Winner found: ${winner.value}');
-        Future.delayed(Duration(seconds: 3), () {
+        Future.delayed(Duration(seconds: 2), () {
           resetGame(); // Automatically reset the game after a short delay
         });
       }
